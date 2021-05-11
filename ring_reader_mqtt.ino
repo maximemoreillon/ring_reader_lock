@@ -1,7 +1,6 @@
 #include <SoftwareSerial.h>
 #include <ESP8266WiFi.h>
 #include "credentials.h"
-#include <ESP8266HTTPClient.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 
