@@ -16,6 +16,7 @@ void MQTT_connection_manager(){
       MQTT_connected = 0;
 
       Serial.println(F("[MQTT] Disconnected"));
+      digitalWrite(LED_PIN,LOW);
     }
 
     if(millis() - last_MQTT_connection_attempt > 1000){
@@ -36,6 +37,7 @@ void MQTT_connection_manager(){
       // MQTT connection status changed to "connected"
       MQTT_connected = 1;
       Serial.println(F("[MQTT] Connected"));
+      digitalWrite(LED_PIN,HIGH);
     }
   }
 }
@@ -51,4 +53,10 @@ void MQTT_message_callback(char* topic, byte* payload, unsigned int length) {
   for (int i = 0; i < length; i++) Serial.print((char)payload[i]);
   Serial.println();
   
+}
+
+
+void MQTT_publish_toggle(){
+  //Send the payload
+  MQTT_client.publish(MQTT_LOCK_COMMAND_TOPIC, "TOGGLE", MQTT_RETAIN);
 }

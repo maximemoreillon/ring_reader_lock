@@ -7,14 +7,19 @@
 #include "credentials.h"; // Wifi + MQTT credentials
 #include "iot_config_home.h"; // MQTT broker URL + connection config
 
-#define HOSTNAME "ringreader"
+#define HOSTNAME "ringreader5"
 
 #define LED_PIN D4
 #define RX_PIN D1
 #define TX_PIN D2
 
+#define CODE_ADDRESS 0x0b
+
 #define MQTT_LOCK_COMMAND_TOPIC "lock/command"
 #define MQTT_RETAIN true
+
+#define COOLDOWN_DURATION 3000
+
 
 
 WiFiClient wifi_client;
@@ -24,14 +29,15 @@ SoftwareSerial swSer;
 boolean wifi_connected = false;
 long wifi_disconnected_time = 0;
 
-// RFID related stuff
-byte current_byte = 0;
-int response_byte_index = 0;
-boolean response_started = false;
-int response_length = 0;
-long last_read = 0;
-byte ring_content[] = {0,0,0,0,0,0,0,0};
-byte correct_combination[] = {0xD0, 0xDB, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05};
+char code[4] = {0x11, 0x12, 0x19, 0x89};
+
+long cooldown_start_time = -COOLDOWN_DURATION;
+
+typedef struct Response {
+  byte status;
+  byte length;
+  char data[4]; // needs a length to be set
+} Response;
 
 void setup() {
   // put your setup code here, to run once:
@@ -54,6 +60,16 @@ void setup() {
 
 
 
+boolean compare_code( char code_1[], char code_2[] ){
+  boolean match = true;
+  for(int i=0; i<4; i++){
+    if(code_1[i] != code_2[i]) {
+      match = false;
+    }
+  }
+  return match;
+}
+
 
 void loop() {
 
@@ -61,13 +77,20 @@ void loop() {
   MQTT_connection_manager();
   MQTT_client.loop();
 
-  response_passthrough();
-  
-  long now = millis();
-  if(now - last_read > 40){
-    last_read = now;
-    read_word(current_byte + 0x03);
+  read_word(CODE_ADDRESS);
+  Response reader_read_response = get_reader_response_sync();
+  //print_response(reader_read_response);
+  boolean match = compare_code(code, reader_read_response.data);
+
+  if(match) {
+    if(millis() - cooldown_start_time > COOLDOWN_DURATION){
+      cooldown_start_time = millis();
+      MQTT_publish_toggle();
+      flash_led();
+    }
   }
+
+  
   
 
 }

@@ -16,6 +16,7 @@ void wifi_connection_manager(){
       // Wifi connection status changed to "disconnected"
       wifi_connected = 0;
       Serial.println(F("[WiFi] Disconnected"));
+      digitalWrite(LED_PIN,LOW);
     }
   }
   else {
@@ -24,6 +25,7 @@ void wifi_connection_manager(){
       wifi_connected = 1;
       Serial.print(F("[WiFi] Connected: "));
       Serial.println(WiFi.localIP());
+      digitalWrite(LED_PIN,HIGH);
     }
   }
   
